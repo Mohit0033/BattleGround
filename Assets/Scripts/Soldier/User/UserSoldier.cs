@@ -3,21 +3,14 @@ using UnityEngine;
 
 public class UserSoldier : Soldier
 {
-
-
-
     private CharacterController controller;
-    private bool isSettingEquip = false;
 
     private void Start()
     {
         controller = GetComponent<CharacterController>();
         anim = GetComponent<Animator>();
         audioSource = GetComponent<AudioSource>();
-
-        currGun = guns[0];
-        currGun.SetActive(true);
-        gunShoot = currGun.GetComponent<GunShoot>();
+        anim.SetBool(HashIDs.notEquipedBool, !isEquiped);
     }
 
     public void Move(float h, float v)
@@ -52,34 +45,12 @@ public class UserSoldier : Soldier
         controller.Move(moveDirection * moveSpeed * Time.deltaTime);
     }
 
-    public void Turn(float angle)
+    public void SetCrouch()
     {
-        transform.Rotate(Vector3.up, angle * turnSpeed * Time.deltaTime, Space.World);
-    }
-
-    public void SetEquipment()
-    {
-        if (isCrouch || isSettingEquip)
+        if (!isEquiped)
         {
             return;
         }
-        anim.SetBool(HashIDs.notEquipedBool, isEquiped);
-        isEquiped = !isEquiped;
-        anim.SetTrigger(HashIDs.grabGunTrigger);
-        StartCoroutine(GrabGun(isEquiped));
-        isSettingEquip = true;
-    }
-
-
-    private IEnumerator GrabGun(bool equip)
-    {
-        yield return waitGrab;
-        currGun.SetActive(equip);
-        isSettingEquip = false;
-    }
-
-    public void SetCrouch()
-    {
         isCrouch = !isCrouch;
         anim.SetBool(HashIDs.crouchBool, isCrouch);
 
@@ -95,25 +66,9 @@ public class UserSoldier : Soldier
             controller.center = new Vector3(controller.center.x, 1.5f, controller.center.z);
         }
 
-        if (isCrouch && !isEquiped)
-        {
-            SetEquipment();
-        }
+        SetEquipment(true);
+        
     }
-
-    public void Fire()
-    {
-        if (isEquiped)
-        {
-
-
-            if (gunShoot.FireBullet(this) && !isCrouch)
-            {
-                anim.SetTrigger(HashIDs.shootTrigger);
-            }
-        }
-    }
-
 
     public void TakeDamage(float damage)
     {

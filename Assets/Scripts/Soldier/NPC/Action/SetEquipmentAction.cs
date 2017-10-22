@@ -3,7 +3,6 @@
 public class SetEquipmentAction : ActionNode
 {
     private bool equip;
-    private bool done = false;
 
     public SetEquipmentAction(NPCSoldier npc, bool equip) : base(npc)
     {
@@ -12,16 +11,15 @@ public class SetEquipmentAction : ActionNode
 
     public override NodeState Tick()
     {
-        if (done)
+
+        if (soldier.isEquiped == equip)
         {
             state = NodeState.Completed;
-            done = false;
         }
         else
         {
-            control.SetEquipment(equip);
+            soldier.SetEquipment(equip);
             state = NodeState.Running;
-            done = true;
         }
 
         return state;

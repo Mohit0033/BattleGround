@@ -23,7 +23,7 @@ namespace BehaviorTree
             }
         }
 
-        public override bool CheckCondition()
+        public override NodeState Tick()
         {
             for (int i = 0; i < CompNodeList.Count; i++)
             {
@@ -39,14 +39,10 @@ namespace BehaviorTree
                         currIndex = i;
                         currNode = CompNodeList[i];
                     }
-                    return true;
+                    break;
                 }
             }
-            return false;
-        }
-
-        public override NodeState Tick()
-        {
+            
             return currNode.Tick();
         }
 

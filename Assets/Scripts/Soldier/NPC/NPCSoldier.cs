@@ -13,17 +13,15 @@ public class NPCSoldier : Soldier
     private CapsuleCollider capsuleCollider;
     private float idleTurnTimer;
 
-    private void Awake()
+    private void Start()
     {
         nav = GetComponent<NavMeshAgent>();
         capsuleCollider = GetComponent<CapsuleCollider>();
         anim = GetComponent<Animator>();
         audioSource = GetComponent<AudioSource>();
-
-        currGun = guns[0];
-        currGun.SetActive(true);
-        gunShoot = currGun.GetComponent<GunShoot>();
+        anim.SetBool(HashIDs.notEquipedBool, !isEquiped);
     }
+
 
     public void Move(Vector3 destination)
     {
@@ -73,35 +71,12 @@ public class NPCSoldier : Soldier
         audioSource.Stop();
     }
 
-    public void Turn(float angle)
+    public override void Turn(float angle)
     {
+        base.Turn(angle);
         Stop();
-        transform.Rotate(Vector3.up, angle * Time.deltaTime, Space.World);
     }
-
-    public void SetEquipment(bool equip)
-    {
-        if (isEquiped == equip)
-        {
-            return;
-        }
-        if (isCrouch && !equip)
-        {
-            return;
-        }
-        anim.SetBool(HashIDs.notEquipedBool, !equip);
-        anim.SetTrigger(HashIDs.grabGunTrigger);
-        StartCoroutine(GrabGun(equip));
-    }
-
-
-    private IEnumerator GrabGun(bool equip)
-    {
-        yield return waitGrab;
-        isEquiped = equip;
-        currGun.SetActive(equip);
-    }
-
+    
     public void SetCrouch()
     {
         isCrouch = !isCrouch;
@@ -125,21 +100,13 @@ public class NPCSoldier : Soldier
         }
     }
 
-    public void Fire(Vector3 position)
+    public override void Fire(Vector3 position)
     {
         Stop();
         transform.LookAt(position);
-        if (isEquiped)
-        {
-
-            if (gunShoot.FireBullet(position, this) && !isCrouch)
-            {
-                anim.SetTrigger(HashIDs.shootTrigger);
-            }
-        }
+        base.Fire(position);
     }
-
-
+    
     public void TakeDamage(float damage, Soldier shooter = null)
     {
         if (isDead)

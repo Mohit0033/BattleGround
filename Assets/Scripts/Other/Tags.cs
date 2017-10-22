@@ -5,4 +5,5 @@
     public static readonly string NPC = "NPC";
     public static readonly string Fence = "Fence";
     public static readonly string Tree = "Tree";
+    public static readonly string WeaponPosition = "WeaponPos";
 }

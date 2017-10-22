@@ -9,6 +9,7 @@ public class NPCControl : MonoBehaviour
     public float sightDistance = 30f;
     public float sightAngle = 60f;
     public float rememberTime = 10f;
+    public float fallBackTime = 8f;
     public Image image;
 
     private UserSoldier player;
@@ -18,7 +19,10 @@ public class NPCControl : MonoBehaviour
     private const string safeZoneKey = "safeZone";
     private const string enemyPosKey = "enemyPos";
     private const string coverPosKey = "coverPos";
+    private const string fallBackPosKey = "fallBackPos";
     private const string shooterPosKey = "shooterPos";
+    private const string weaponPosKey = "weaponPos";
+    private const string weaponKey = "weapon";
 
     private NPCSoldier npc;
     private GameManager gameManager;
@@ -26,9 +30,12 @@ public class NPCControl : MonoBehaviour
     private float nextRadius;
     private Vector3 nextPos;
     private float rememberTimer;
+    private float fallBackTimer;
+    private bool isArrivedSafeZone = true;
 
     private SelectionNode root = new SelectionNode();
-    private SequenceNode combat, toSafeZone, idle, counter;
+    private SelectionNode haveEnemy, beingShoot, idle;
+    private SequenceNode toSafeZone, stayInCover, seekWeapon;
 
     private void Start()
     {
@@ -38,11 +45,13 @@ public class NPCControl : MonoBehaviour
         npc = GetComponent<NPCSoldier>();
         npc.Damaged += Damaged;
         nextRadius = gameManager.nextRadius;
-        nextPos = SetCoverPos(transform.position);
+        SetCoverPos(transform.position);
 
         var notInSafeZoneCond = new ConditionNode(IsInSafeZone, false);
         var haveEnemyCond = new ConditionNode(HaveEnemyInSight, true);
         var beingShootCond = new ConditionNode(BeingShoot, true);
+        var haveWeaponCond = new ConditionNode(HaveWeapon, true);
+        var seekWeaponCond = new ConditionNode(SeekWeapon, true);
 
         var equipAction = new SetEquipmentAction(npc, true);
         var notEquipAction = new SetEquipmentAction(npc, false);
@@ -50,32 +59,58 @@ public class NPCControl : MonoBehaviour
         var notCrouchAction = new SetCrouchAction(npc, false);
         var toSafeZoneAction = new MoveAction(npc, blackBoard, safeZoneKey);
         var goCoverAction = new MoveAction(npc, blackBoard, coverPosKey);
+        var FallBackAction = new MoveAction(npc, blackBoard, fallBackPosKey);
+        var goWeaponAction = new MoveAction(npc, blackBoard, weaponPosKey);
+        var pickUpWeaponAction = new PickUpWeaponAction(npc, blackBoard, weaponKey);
         var shootAction = new ShootAction(npc, blackBoard, enemyPosKey);
         var turnToShooterAction = new TurnAction(npc, blackBoard, shooterPosKey);
         var idleAction = new IdleAction(npc);
 
-        counter = new SequenceNode();
-        counter.AddCondition(beingShootCond);
-        counter.AddNode(turnToShooterAction);
-
-        combat = new SequenceNode();
-        combat.AddCondition(haveEnemyCond);
+        var combat = new SequenceNode();
+        combat.AddCondition(haveWeaponCond);
         combat.AddNode(equipAction);
         combat.AddNode(shootAction);
+
+        var fallBack = new SequenceNode();
+        fallBack.AddNode(FallBackAction);
+
+        haveEnemy = new SelectionNode();
+        haveEnemy.AddCondition(haveEnemyCond);
+        haveEnemy.AddNode(combat);
+        haveEnemy.AddNode(fallBack);
+
+        var counter = new SequenceNode();
+        counter.AddCondition(haveWeaponCond);
+        counter.AddNode(turnToShooterAction);
+
+        beingShoot = new SelectionNode();
+        beingShoot.AddCondition(beingShootCond);
+        beingShoot.AddNode(counter);
+        beingShoot.AddNode(fallBack);
 
         toSafeZone = new SequenceNode();
         toSafeZone.AddCondition(notInSafeZoneCond);
         toSafeZone.AddNode(notCrouchAction);
         toSafeZone.AddNode(notEquipAction);
         toSafeZone.AddNode(toSafeZoneAction);
-        toSafeZone.AddNode(goCoverAction);
 
-        idle = new SequenceNode();
-        idle.AddNode(crouchAction);
-        idle.AddNode(idleAction);
+        stayInCover = new SequenceNode();
+        stayInCover.AddCondition(haveWeaponCond);
+        stayInCover.AddNode(goCoverAction);
+        stayInCover.AddNode(crouchAction);
+        stayInCover.AddNode(idleAction);
 
-        root.AddNode(combat);
-        root.AddNode(counter);
+        seekWeapon = new SequenceNode();
+        seekWeapon.AddCondition(seekWeaponCond);
+        seekWeapon.AddNode(goWeaponAction);
+        seekWeapon.AddNode(pickUpWeaponAction);
+
+        idle = new SelectionNode();
+        idle.AddNode(stayInCover);
+        idle.AddNode(seekWeapon);
+
+        root.AddNode(haveEnemy);
+        root.AddNode(beingShoot);
         root.AddNode(toSafeZone);
         root.AddNode(idle);
     }
@@ -85,6 +120,10 @@ public class NPCControl : MonoBehaviour
         blackBoard.SetValue(shooterPosKey, shooter.transform.position);
         this.shooter = shooter;
         rememberTimer = rememberTime;
+        if (!npc.isHaveWeapon)
+        {
+            SetFallBackPos(shooter.transform.position);
+        }
     }
 
     private void FixedUpdate()
@@ -98,7 +137,7 @@ public class NPCControl : MonoBehaviour
         {
             if (outOfSafeZoneTimer > 3f)
             {
-                npc.TakeDamage(gameManager.notSafeDamage, npc);
+                npc.TakeDamage(gameManager.notSafeDamage);
                 outOfSafeZoneTimer = 0;
             }
             else
@@ -110,7 +149,7 @@ public class NPCControl : MonoBehaviour
         root.CheckCondition();
         root.Tick();
 
-        if (root.currNode == combat)
+        if (root.currNode == haveEnemy)
         {
             image.color = Color.red;
         }
@@ -118,11 +157,15 @@ public class NPCControl : MonoBehaviour
         {
             image.color = Color.yellow;
         }
-        else if (root.currNode == idle)
+        else if (idle.currNode == stayInCover)
         {
             image.color = Color.green;
         }
-        else if (root.currNode == counter)
+        else if (idle.currNode == seekWeapon)
+        {
+            image.color = Color.blue;
+        }
+        else if (root.currNode == beingShoot)
         {
             image.color = Color.black;
         }
@@ -137,14 +180,19 @@ public class NPCControl : MonoBehaviour
         {
             if (allNPC[i].isDead) continue;
             if (allNPC[i].transform == transform) continue;
-            dir = allNPC[i].transform.position - transform.position;
-            if (Vector3.Distance(transform.position, allNPC[i].transform.position) < sightDistance &&
+            var enemyPos = allNPC[i].transform.position;
+            dir = enemyPos - transform.position;
+            if (Vector3.Distance(transform.position, enemyPos) < sightDistance &&
                 Vector3.Angle(transform.forward, dir) < sightAngle / 2 &&
                 Physics.Raycast(transform.position + Vector3.up, dir, out hit, sightDistance))
             {
                 if (hit.collider.gameObject.tag == Tags.NPC)
                 {
-                    blackBoard.SetValue(enemyPosKey, allNPC[i].transform.position);
+                    blackBoard.SetValue(enemyPosKey, enemyPos);
+                    if (!npc.isHaveWeapon)
+                    {
+                        SetFallBackPos(enemyPos);
+                    }
                     return true;
                 }
             }
@@ -159,12 +207,32 @@ public class NPCControl : MonoBehaviour
                 if (hit.collider.gameObject.tag == Tags.Player)
                 {
                     blackBoard.SetValue(enemyPosKey, player.transform.position);
+                    if (!npc.isHaveWeapon)
+                    {
+                        SetFallBackPos(player.transform.position);
+                    }
                     return true;
                 }
             }
         }
+        if (fallBackTimer > 0)
+        {
+            fallBackTimer -= Time.fixedDeltaTime;
+            return true;
+        }
+
 
         return false;
+    }
+
+    private void SetFallBackPos(Vector3 enemyPos)
+    {
+        var dir = enemyPos - transform.position;
+        var length = dir.magnitude;
+        dir = Quaternion.Euler(0, 90, 0) * dir.normalized * (sightDistance + 1 - length);
+        var fallBackPos = transform.position + dir;
+        blackBoard.SetValue(fallBackPosKey, fallBackPos);
+        fallBackTimer = fallBackTime * (sightDistance - length) / sightDistance;
     }
 
     private bool IsInSafeZone()
@@ -175,24 +243,33 @@ public class NPCControl : MonoBehaviour
             if (Vector3.Distance(transform.position, gameManager.nextSafeZone) > gameManager.nextRadius)
             {
                 var random = Random.insideUnitCircle;
-                var pos = gameManager.nextSafeZone + new Vector3(gameManager.nextRadius * random.x, 0f, gameManager.nextRadius * random.y);
-                blackBoard.SetValue(safeZoneKey, pos);
-                nextPos = SetCoverPos(pos);
+                var safeZone = gameManager.nextSafeZone + new Vector3(gameManager.nextRadius * random.x, 0f, gameManager.nextRadius * random.y);
+                blackBoard.SetValue(safeZoneKey, safeZone);
+                isArrivedSafeZone = false;
+                nextPos = safeZone;
+                SetCoverPos(safeZone);
                 return false;
             }
         }
         else
         {
+            if (isArrivedSafeZone)
+            {
+                return true;
+            }
             if (Vector3.Distance(transform.position, nextPos) > 0.2)
             {
                 return false;
             }
+            else
+            {
+                isArrivedSafeZone = true;
+            }
         }
-        npc.Stop();
         return true;
     }
 
-    private Vector3 SetCoverPos(Vector3 pos)
+    private void SetCoverPos(Vector3 pos)
     {
         var distance = float.MaxValue;
         var coverPos = Vector3.zero;
@@ -212,7 +289,6 @@ public class NPCControl : MonoBehaviour
             }
         }
         blackBoard.SetValue(coverPosKey, coverPos);
-        return coverPos;
 
     }
 
@@ -224,6 +300,36 @@ public class NPCControl : MonoBehaviour
             return true;
         }
 
+        if (fallBackTimer > 0)
+        {
+            fallBackTimer -= Time.fixedDeltaTime;
+            return true;
+        }
         return false;
+    }
+
+    private bool HaveWeapon()
+    {
+        return npc.isHaveWeapon;
+    }
+
+    private bool SeekWeapon()
+    {
+        var allWeapon = gameManager.allWeapon;
+        Transform weaponPos = null;
+        float distance = 100000;
+        for (int i = 0; i < allWeapon.Length; i++)
+        {
+            if (!allWeapon[i].gameObject.activeSelf) continue;
+            var dis = Vector3.Distance(transform.position, allWeapon[i].position);
+            if (dis < distance)
+            {
+                weaponPos = allWeapon[i];
+                distance = dis;
+            }
+        }
+        blackBoard.SetValue(weaponPosKey, weaponPos.position);
+        blackBoard.SetValue(weaponKey, weaponPos.gameObject);
+        return true;
     }
 }

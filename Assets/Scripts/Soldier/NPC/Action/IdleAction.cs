@@ -10,7 +10,7 @@ public class IdleAction : ActionNode
 
     public override NodeState Tick()
     {
-        control.Idle();
+        soldier.Idle();
         return NodeState.Running;
     }
 }

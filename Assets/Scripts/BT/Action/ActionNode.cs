@@ -2,11 +2,11 @@
 {
     public abstract class ActionNode : Node
     {
-        protected NPCSoldier control;
+        protected NPCSoldier soldier;
 
-        public ActionNode(NPCSoldier npcControl)
+        public ActionNode(NPCSoldier npcSoldier)
         {
-            control = npcControl;
+            soldier = npcSoldier;
         }
     }
 }

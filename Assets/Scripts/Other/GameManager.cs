@@ -7,11 +7,16 @@ public class GameManager : MonoBehaviour
     public float maxTime;
     public GameObject npc;
     public int npcMaxNum = 10;
+    public GameObject m4a1;
+    public int m4a1Num = 15;
+    public GameObject ump45;
+    public int ump45Num = 35;
     public float[] safeZoneRadiuses;
     public float safeZoneMoveSpeed = 4f;
     public float notSafeDamage = 5f;
     public float mapWidth;
     public Transform safeZoneCircle;
+    public GameObject PickUpUI;
 
     [HideInInspector]
     public float currRadius;
@@ -23,6 +28,8 @@ public class GameManager : MonoBehaviour
     public NPCSoldier[] allNPC;
     [HideInInspector]
     public Vector3[] allCoverPos;
+    [HideInInspector]
+    public Transform[] allWeapon;
 
     private int nextRadiusIndex;
     private float changeTimer;
@@ -36,6 +43,7 @@ public class GameManager : MonoBehaviour
     {
         GetEnvironmentPostion();
         GenerateNPC();
+        GenerateWeapon();
 
         safeZoneCircle.localScale = new Vector3(mapWidth * 1.5f, 100f, mapWidth * 1.5f);
         currRadius = nextRadius = safeZoneCircle.localScale.x / 2;
@@ -68,9 +76,34 @@ public class GameManager : MonoBehaviour
             allCoverPos[index++] = trans.position + trans.right;
         }
 
-
     }
-    
+
+    private void GenerateWeapon()
+    {
+        var positions = GameObject.FindGameObjectsWithTag(Tags.WeaponPosition);
+        allWeapon = new Transform[m4a1Num + ump45Num];
+
+        GenerateWeapon(positions, 0, m4a1Num, m4a1);
+        GenerateWeapon(positions, m4a1Num, ump45Num, ump45);
+    }
+
+    private void GenerateWeapon(GameObject[] positions, int start, int num, GameObject name)
+    {
+        int count = positions.Length;
+        for (int i = start; i < start + num; i++)
+        {
+            var pos = positions[Random.Range(0, count - 1)];
+            while (!pos.activeSelf)
+            {
+                pos = positions[Random.Range(0, count - 1)];
+            }
+            var weapon = Instantiate(name, pos.transform.position, pos.transform.rotation);
+            weapon.GetComponent<ShowInteraction>().UI = PickUpUI;
+            allWeapon[i] = weapon.transform;
+            pos.SetActive(false);
+        }
+    }
+
     private void GenerateNPC()
     {
         allNPC = new NPCSoldier[npcMaxNum];

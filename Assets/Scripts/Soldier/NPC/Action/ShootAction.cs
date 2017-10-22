@@ -19,7 +19,7 @@ public class ShootAction : ActionNode
         Vector3 pos;
         if (board.GetValue(key, out pos))
         {
-            control.Fire(pos + shootPos);
+            soldier.Fire(pos + shootPos);
         }
 
         return NodeState.Running;

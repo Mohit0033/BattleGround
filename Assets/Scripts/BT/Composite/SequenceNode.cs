@@ -4,26 +4,8 @@ namespace BehaviorTree
 {
     public class SequenceNode : CompositeNode
     {
-        private List<ConditionNode> conditionList;
         private List<ActionNode> actionList;
-
-        public void AddCondition(ConditionNode added)
-        {
-            if (conditionList == null)
-            {
-                conditionList = new List<ConditionNode>();
-            }
-            conditionList.Add(added);
-        }
-
-        public void RemoveCondition(ConditionNode removed)
-        {
-            if (conditionList != null)
-            {
-                conditionList.Remove(removed);
-            }
-        }
-
+        
         public void AddNode(ActionNode added)
         {
             if (actionList == null)
@@ -39,22 +21,6 @@ namespace BehaviorTree
             {
                 actionList.Remove(removed);
             }
-        }
-
-        public override bool CheckCondition()
-        {
-            if (conditionList != null)
-            {
-                foreach (var condition in conditionList)
-                {
-                    if (!condition.IsSatisfied())
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
         }
 
         public override NodeState Tick()

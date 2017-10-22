@@ -17,14 +17,14 @@ public class TurnAction : ActionNode
         Vector3 pos;
         if (board.GetValue(key, out pos))
         {
-            var dir = pos - control.transform.position;
-            var desiredAngle = Vector3.Angle(control.transform.forward, dir);
+            var dir = pos - soldier.transform.position;
+            var desiredAngle = Vector3.Angle(soldier.transform.forward, dir);
             if (Mathf.Abs(desiredAngle) > 10)
             {
-                var normal = Vector3.Cross(control.transform.forward, dir);
+                var normal = Vector3.Cross(soldier.transform.forward, dir);
                 var angle = Mathf.Lerp(0, desiredAngle, 1f);
                 angle *= Mathf.Sign(Vector3.Dot(Vector3.up, normal));
-                control.Turn(angle);
+                soldier.Turn(angle);
                 state = NodeState.Running;
             }
             else

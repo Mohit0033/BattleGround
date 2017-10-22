@@ -17,14 +17,14 @@ public class MoveAction : ActionNode
         Vector3 pos;
         if (board.GetValue(key, out pos))
         {
-            if (Vector3.Distance(control.transform.position, pos) > 0.1f)
+            if (Vector3.Distance(soldier.transform.position, pos) > 0.1f)
             {
-                control.Move(pos);
+                soldier.Move(pos);
                 state = NodeState.Running;
             }
             else
             {
-                control.Stop();
+                soldier.Stop();
                 state = NodeState.Completed;
             }
         }

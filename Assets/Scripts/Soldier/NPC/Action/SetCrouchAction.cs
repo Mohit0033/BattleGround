@@ -11,13 +11,13 @@ public class SetCrouchAction : ActionNode
 
     public override NodeState Tick()
     {
-        if (control.isCrouch == target)
+        if (soldier.isCrouch == target)
         {
             state = NodeState.Completed;
         }
         else
         {
-            control.SetCrouch();
+            soldier.SetCrouch();
             state = NodeState.Running;
         }
 

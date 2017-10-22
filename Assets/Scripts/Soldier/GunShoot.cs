@@ -30,17 +30,29 @@ public class GunShoot : MonoBehaviour
         }
     }
 
-    public bool FireBullet(Soldier soldier)//for player
+    /// <summary>
+    /// fire the bullet to enemy
+    /// </summary>
+    /// <param name="position">if soldier is user,this is the aim position. if is npc, this is the position of npc being shot</param>
+    /// <param name="soldier">user or npc who is shooting</param>
+    /// <returns></returns>
+    public bool FireBullet(Vector3 position, Soldier soldier)
     {
-        var ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-
-        return DoFireBullet(ray, soldier);
-    }
-
-    public bool FireBullet(Vector3 position, Soldier soldier)//for npc
-    {
-        var dir = position - transform.position;
-        var ray = new Ray(transform.position, dir);
+        Ray ray;
+        if (soldier as UserSoldier)
+        {
+            ray = mainCamera.ScreenPointToRay(position);
+        }
+        else if(soldier as NPCSoldier)
+        {
+            var dir = position - transform.position;
+            ray = new Ray(transform.position, dir);
+        }
+        else
+        {
+            return false;
+        }
+        
         return DoFireBullet(ray, soldier);
     }
 

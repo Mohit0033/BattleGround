@@ -10,13 +10,13 @@ public class NPCSoldier : Soldier
     public event Action<Soldier> Damaged;
 
     private NavMeshAgent nav;
-    private CapsuleCollider capsuleCollider;
+    private CapsuleCollider capsule;
     private float idleTurnTimer;
 
     private void Start()
     {
         nav = GetComponent<NavMeshAgent>();
-        capsuleCollider = GetComponent<CapsuleCollider>();
+        capsule = GetComponent<CapsuleCollider>();
         anim = GetComponent<Animator>();
         audioSource = GetComponent<AudioSource>();
         anim.SetBool(HashIDs.notEquipedBool, !isEquiped);
@@ -76,29 +76,6 @@ public class NPCSoldier : Soldier
         base.Turn(angle);
         Stop();
     }
-    
-    public void SetCrouch()
-    {
-        isCrouch = !isCrouch;
-        anim.SetBool(HashIDs.crouchBool, isCrouch);
-
-        if (isCrouch)
-        {
-            audioSource.Pause();
-            capsuleCollider.height = 2f;
-            capsuleCollider.center = new Vector3(capsuleCollider.center.x, 1f, capsuleCollider.center.z);
-        }
-        else
-        {
-            capsuleCollider.height = 3f;
-            capsuleCollider.center = new Vector3(capsuleCollider.center.x, 1.5f, capsuleCollider.center.z);
-        }
-
-        if (isCrouch)
-        {
-            SetEquipment(true);
-        }
-    }
 
     public override void Fire(Vector3 position)
     {
@@ -106,7 +83,25 @@ public class NPCSoldier : Soldier
         transform.LookAt(position);
         base.Fire(position);
     }
-    
+
+    public override void SetCrouch()
+    {
+        base.SetCrouch();
+
+        if (isCrouch)
+        {
+            audioSource.Pause();
+            capsule.height = 2f;
+            capsule.center = new Vector3(capsule.center.x, 1f, capsule.center.z);
+        }
+        else
+        {
+            capsule.height = 3f;
+            capsule.center = new Vector3(capsule.center.x, 1.5f, capsule.center.z);
+        }
+
+    }
+
     public void TakeDamage(float damage, Soldier shooter = null)
     {
         if (isDead)

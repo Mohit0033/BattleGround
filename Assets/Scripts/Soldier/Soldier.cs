@@ -89,6 +89,17 @@ public abstract class Soldier : MonoBehaviour
         isSettingEquip = false;
     }
 
+    public virtual void SetCrouch()
+    {
+        isCrouch = !isCrouch;
+        anim.SetBool(HashIDs.crouchBool, isCrouch);
+
+        if (isCrouch)
+        {
+            SetEquipment(true);
+        }
+    }
+
     /// <summary>
     /// fire bullet
     /// </summary>

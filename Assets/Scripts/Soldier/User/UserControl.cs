@@ -18,7 +18,7 @@ public class UserControl : MonoBehaviour
         touchRect = new Rect(Screen.width * 0.4f, Screen.height * 0.3f, Screen.width * 0.5f, Screen.height * 0.7f);
     }
 
-    private void FixedUpdate()
+    private void Update()
     {
         if (soldierControl.isDead)
         {

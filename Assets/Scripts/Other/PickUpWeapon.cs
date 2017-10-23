@@ -23,4 +23,15 @@ public class PickUpWeapon : MonoBehaviour, IPointerDownHandler
         }
 
     }
+#if UNITY_STANDALONE
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.E) && weapon != null)
+        {
+            user.PickUpWeapon(weapon);
+            user.SetEquipment(true);
+            gameObject.SetActive(false);
+        }
+    }
+#endif
 }

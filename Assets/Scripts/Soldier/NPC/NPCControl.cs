@@ -10,6 +10,7 @@ public class NPCControl : MonoBehaviour
     public float sightAngle = 60f;
     public float rememberTime = 10f;
     public float fallBackTime = 8f;
+    public float updateTime = 0.1f;
     public Image image;
 
     private UserSoldier player;
@@ -31,6 +32,7 @@ public class NPCControl : MonoBehaviour
     private Vector3 nextPos;
     private float rememberTimer;
     private float fallBackTimer;
+    private float updateTimer;
     private bool isArrivedSafeZone = true;
 
     private SelectionNode root = new SelectionNode();
@@ -126,8 +128,15 @@ public class NPCControl : MonoBehaviour
         }
     }
 
-    private void FixedUpdate()
+    private void Update()
     {
+        if (updateTimer < updateTime)
+        {
+            updateTimer += Time.deltaTime;
+            return;
+        }
+        updateTimer = 0;
+
         if (npc.isDead)
         {
             return;
@@ -142,7 +151,7 @@ public class NPCControl : MonoBehaviour
             }
             else
             {
-                outOfSafeZoneTimer += Time.deltaTime;
+                outOfSafeZoneTimer += updateTime;
             }
         }
 
@@ -217,7 +226,7 @@ public class NPCControl : MonoBehaviour
         }
         if (fallBackTimer > 0)
         {
-            fallBackTimer -= Time.fixedDeltaTime;
+            fallBackTimer -= updateTime;
             return true;
         }
 
@@ -296,15 +305,10 @@ public class NPCControl : MonoBehaviour
     {
         if (rememberTimer > 0 && !shooter.isDead)
         {
-            rememberTimer -= Time.fixedDeltaTime;
+            rememberTimer -= updateTime;
             return true;
         }
-
-        if (fallBackTimer > 0)
-        {
-            fallBackTimer -= Time.fixedDeltaTime;
-            return true;
-        }
+        fallBackTimer = 0;
         return false;
     }
 

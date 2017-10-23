@@ -45,14 +45,9 @@ public class UserSoldier : Soldier
         controller.Move(moveDirection * moveSpeed * Time.deltaTime);
     }
 
-    public void SetCrouch()
+    public override void SetCrouch()
     {
-        if (!isEquiped)
-        {
-            return;
-        }
-        isCrouch = !isCrouch;
-        anim.SetBool(HashIDs.crouchBool, isCrouch);
+        base.SetCrouch();
 
         if (isCrouch)
         {
@@ -66,8 +61,6 @@ public class UserSoldier : Soldier
             controller.center = new Vector3(controller.center.x, 1.5f, controller.center.z);
         }
 
-        SetEquipment(true);
-        
     }
 
     public void TakeDamage(float damage)
